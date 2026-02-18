@@ -1,4 +1,4 @@
-var validatedPath = ValidatePathWithinDirectory(fs.AppDataDirectory, filesSubDirectory);
+            var validatedPath = ValidatePathWithinDirectory(fs.AppDataDirectory, filesSubDirectory);
 
             //TODO: This code searches for a string, would me more efficient as a direct search
             await Task.Run(() =>
