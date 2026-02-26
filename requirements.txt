@@ -1,0 +1,4 @@
+# requirements.txt for testing only
+sentence-transformers==5.2.3
+transformers==4.34.0  # locked compatible version
+torch==2.1.0           # minimal runtime dependency for sentence-transformers
