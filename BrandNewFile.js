@@ -13,8 +13,6 @@ module.exports.testReleaseFunction = function(req, res) {
 }
 
 module.exports.userSearchFunctions = function (req, res) {
-	var query = "SELECT name,id FROM Users WHERE login='" + req.body.login + "'";
-	db.sequelize.query(query, {
 		model: db.User
 	}).then(user => {
 		if (user.length) {
