@@ -1,0 +1,19 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+  .:
+    dependencies:
+      posthog-js:
+        specifier: 1.261.0
+        version: 1.261.0
+
+packages:
+  posthog-js@1.261.0:
+    resolution:
+      integrity: sha512-placeholderHashForTestingPurposesOnly==
+    engines:
+      node: '>=18'
