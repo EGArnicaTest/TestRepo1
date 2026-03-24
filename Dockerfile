@@ -1,51 +1,43 @@
-FROM node:20-buster AS installer
-COPY . /juice-shop
-WORKDIR /juice-shop
-RUN npm i -g typescript ts-node
-RUN npm install --omit=dev --unsafe-perm
-RUN npm dedupe --omit=dev
-RUN rm -rf frontend/node_modules
-RUN rm -rf frontend/.angular
-RUN rm -rf frontend/src/assets
-RUN mkdir logs
-RUN chown -R 65532 logs
-RUN chgrp -R 0 ftp/ frontend/dist/ logs/ data/ i18n/
-RUN chmod -R g=u ftp/ frontend/dist/ logs/ data/ i18n/
-RUN rm data/chatbot/botDefaultTrainingData.json || true
-RUN rm ftp/legal.md || true
-RUN rm i18n/*.json || true
+FROM registry-app.eng.qops.net:5001/python-3.13/gold/bookworm-slim-python-3.13-gold:1753100295
 
-ARG CYCLONEDX_NPM_VERSION=latest
-RUN npm install -g @cyclonedx/cyclonedx-npm@$CYCLONEDX_NPM_VERSION
-RUN npm run sbom
+# Switch to root for system-level operations
+USER root
 
-# workaround for libxmljs startup error
-FROM node:20-buster AS libxmljs-builder
-WORKDIR /juice-shop
-RUN apt-get update && apt-get install -y build-essential python3
-COPY --from=installer /juice-shop/node_modules ./node_modules
-RUN rm -rf node_modules/libxmljs/build && \
-  cd node_modules/libxmljs && \
-  npm run build
+WORKDIR /tmp
 
-FROM gcr.io/distroless/nodejs20-debian12
-ARG BUILD_DATE
-ARG VCS_REF
-LABEL maintainer="Bjoern Kimminich <bjoern.kimminich@owasp.org>" \
-    org.opencontainers.image.title="OWASP Juice Shop" \
-    org.opencontainers.image.description="Probably the most modern and sophisticated insecure web application" \
-    org.opencontainers.image.authors="Bjoern Kimminich <bjoern.kimminich@owasp.org>" \
-    org.opencontainers.image.vendor="Open Worldwide Application Security Project" \
-    org.opencontainers.image.documentation="https://help.owasp-juice.shop" \
-    org.opencontainers.image.licenses="MIT" \
-    org.opencontainers.image.version="17.3.0" \
-    org.opencontainers.image.url="https://owasp-juice.shop" \
-    org.opencontainers.image.source="https://github.com/juice-shop/juice-shop" \
-    org.opencontainers.image.revision=$VCS_REF \
-    org.opencontainers.image.created=$BUILD_DATE
-WORKDIR /juice-shop
-COPY --from=installer --chown=65532:0 /juice-shop .
-COPY --chown=65532:0 --from=libxmljs-builder /juice-shop/node_modules/libxmljs ./node_modules/libxmljs
-USER 65532
-EXPOSE 3000
-CMD ["/juice-shop/build/app.js"]
+ARG PIP_VERSION
+ARG POETRY_VERSION
+
+# Environment variables for Python
+ENV PYTHONFAULTHANDLER=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONHASHSEED=random \
+    # prevents python creating .pyc files
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_DEFAULT_TIMEOUT=100 \
+    POETRY_VIRTUALENVS_CREATE=false
+
+# Install system dependencies
+RUN apt-get update \
+    && apt-get upgrade -y \
+    && apt-get install -y \
+        git \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pip.conf .
+
+# Install Python dependencies
+RUN pip install --upgrade pip==$PIP_VERSION --no-cache-dir
+RUN PIP_CONFIG_FILE=pip.conf pip install poetry==$POETRY_VERSION --no-cache-dir
+
+# Copy only requirements to cache them in docker layer
+COPY poetry.lock pyproject.toml poetry.toml /tmp/
+
+# Project initialization
+RUN python3 -m poetry install --no-interaction --no-ansi --verbose --no-root
+
+# Configure git for security
+RUN git config --system --add safe.directory '*'
+
+# Switch back to non-root user for security
+USER user
