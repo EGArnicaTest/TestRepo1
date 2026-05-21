@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example</groupId>
+    <artifactId>cve-2026-40453-test</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>CVE-2026-40453 Scanner Test</name>
+    <description>
+        Test project declaring org.apache.camel:camel-jms@4.0.4,
+        which is vulnerable to CVE-2026-40453 (affected range: 3.0.0 - 4.14.5).
+    </description>
+
+    <dependencies>
+        <!-- Vulnerable dependency: CVE-2026-40453 -->
+        <dependency>
+            <groupId>org.apache.camel</groupId>
+            <artifactId>camel-jms</artifactId>
+            <version>4.0.4</version>
+        </dependency>
+    </dependencies>
+
+</project>
